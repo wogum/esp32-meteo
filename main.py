@@ -20,7 +20,7 @@ def record(timer = None):
     app.vals[1] = round(v[1] * app.cfg.cal[1] + app.cfg.dt[1], 1)
     app.vals[2] = round(v[2] * app.cfg.cal[2] + app.cfg.dt[2], 1)
   if app.lux is not None:
-    app.vals[4] = round(app.lux.read() * app.cfg.cal[5] + app.cfg.dt[5], 1)
+    app.vals[4] = round(app.lux.read() * app.cfg.cal[4] + app.cfg.dt[4], 1)
     if app.vals[4] < 0:
       app.vals[4] = 0
     app.vals[2] = round(app.lux.UV * app.cfg.cal[2] + app.cfg.dt[2], 1)
@@ -118,7 +118,7 @@ def startup():
       app.units[2] = "H[%]"
     except:
       app.bme = None
-    # si1145
+    # si1145 / max44009
     try:
       app.lux = si1145.SI1145(app.i2c)
       app.devs[4] = "Si1145"
@@ -126,6 +126,15 @@ def startup():
       app.units[2] = "UV[]"
     except:
       app.lux = None
+    if app.lux is None:
+      try:
+        import max44009
+        app.lux = max44009.MAX44009(app.i2c)
+        app.devs[4] = "Max44009"
+        app.units[4] = "I[lx]"
+        app.units[2] = "UV[]"
+      except:
+        app.lux = None
     #ds18b20
     Pin(4, Pin.OUT, Pin.PULL_DOWN, value=0)
     Pin(15, Pin.OUT, Pin.PULL_UP, value=1)
@@ -139,7 +148,7 @@ def startup():
     # ntp
     app.ntp(app.cfg.ntp)
     #Vbat
-    print(app.tm(), "Node", app.cfg.node, "Vbat", bat())
+    print(app.tm(), "Node", app.cfg.node, "Vbat", bat(), app.devs)
 
 
 
@@ -161,5 +170,3 @@ timer2 = Timer(2)
 timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
 
 gc.enable()
-#app.www.extparse = parse
-#app.www.exthandle = handle

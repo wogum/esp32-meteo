@@ -59,3 +59,11 @@ class MAX44009:
         if self.lux is None:
             self.read()
         return self.lux
+
+    @property
+    def UV(self):
+        return 0
+
+    @property
+    def IR(self):
+        return 0

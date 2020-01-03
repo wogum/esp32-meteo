@@ -125,10 +125,6 @@ class SI1145:
         return unpack("<H", self.i2c.readfrom_mem(self.i2caddr, 0x2C, 2))[0] / 100
 
     @property
-    def V(self):
-        return self.read()
-
-    @property
     def IR(self):
         from ustruct import unpack
         ir = unpack("<H", self.i2c.readfrom_mem(self.i2caddr, 0x24, 2))[0]
