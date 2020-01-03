@@ -47,7 +47,6 @@ def gosleep():
   if app.cfg.slp > 0:
     # power off
     network.WLAN(network.STA_IF).active(False)
-    Pin(35, Pin.IN, Pin.PULL_HOLD)
     Pin(25, Pin.IN, Pin.PULL_HOLD)
     Pin(15, Pin.IN, Pin.PULL_HOLD)
     Pin(26, Pin.IN, Pin.PULL_HOLD)
@@ -103,7 +102,6 @@ def startup():
     if app.cfg.led != 0:
         app.led(app.cfg.led)
     # bat ESP32 Lolin like
-    Pin(35, Pin.IN, None)
     app.adc = ADC(Pin(35))
     app.adc.atten(ADC.ATTN_11DB)
     app.adc.width(ADC.WIDTH_12BIT)
