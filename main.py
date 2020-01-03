@@ -23,11 +23,14 @@ def record(timer = None):
     app.vals[4] = round(app.lux.read() * app.cfg.cal[4] + app.cfg.dt[4], 1)
     if app.vals[4] < 0:
       app.vals[4] = 0
-    app.vals[2] = round(app.lux.UV * app.cfg.cal[2] + app.cfg.dt[2], 1)
-    if app.vals[2] < 0:
-      app.vals[2] = 0
+    if 'Si1145' in app.devs:
+      app.vals[2] = round(app.lux.UV * app.cfg.cal[2] + app.cfg.dt[2], 1)
+      if app.vals[2] < 0:
+        app.vals[2] = 0
   if app.ds is not None:
     app.vals[3] = round(app.ds.read() * app.cfg.cal[3] + app.cfg.dt[3], 1)
+    if app.devs[0] == '' and app.vals[0] == 0:
+      app.vals[0] = app.vals[3]
   print(app.tm(), "Readings", app.vals)
   if "http" in app.cfg.url:
     if not app.www.httpsend():
@@ -44,6 +47,7 @@ def gosleep():
   if app.cfg.slp > 0:
     # power off
     network.WLAN(network.STA_IF).active(False)
+    Pin(35, Pin.IN, Pin.PULL_HOLD)
     Pin(25, Pin.IN, Pin.PULL_HOLD)
     Pin(15, Pin.IN, Pin.PULL_HOLD)
     Pin(26, Pin.IN, Pin.PULL_HOLD)
@@ -53,7 +57,7 @@ def gosleep():
     Pin(14, Pin.IN, Pin.PULL_HOLD)
     # time to sleep
     next = (app.cfg.node & 0x07) + 15 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
-    print(app.tm(), "DEEP SLEEP ", next)
+    print(app.tm(), app.RED, "DEEP SLEEP ", app.END, next)
     machine.deepsleep(next * 1000)
 
 def waitrst(timer = None):
@@ -99,8 +103,10 @@ def startup():
     if app.cfg.led != 0:
         app.led(app.cfg.led)
     # bat ESP32 Lolin like
+    Pin(35, Pin.IN, None)
     app.adc = ADC(Pin(35))
     app.adc.atten(ADC.ATTN_11DB)
+    app.adc.width(ADC.WIDTH_12BIT)
     # rtc mem
     app.mem = mem.MEM()
     # i2c
@@ -132,7 +138,6 @@ def startup():
         app.lux = max44009.MAX44009(app.i2c)
         app.devs[4] = "Max44009"
         app.units[4] = "I[lx]"
-        app.units[2] = "UV[]"
       except:
         app.lux = None
     #ds18b20
@@ -148,7 +153,9 @@ def startup():
     # ntp
     app.ntp(app.cfg.ntp)
     #Vbat
-    print(app.tm(), "Node", app.cfg.node, "Vbat", bat(), app.devs)
+    print(app.tm(), "Node", app.cfg.node, "Vbat", bat())
+    print(app.tm(), app.devs)
+    print(app.tm(), app.units)
 
 
 
