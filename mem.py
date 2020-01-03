@@ -80,6 +80,6 @@ class MEM:
                 t[i] = self.b2f(t[i])
             tm = time.localtime(v[0] - 946684800)
             s = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*tm) \
-                + " [{}, {}, {}, {}, {}, {}]".format(*t)
+                + " [{:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}]".format(*t)
             print(s)
             mem = mem[16:]

@@ -7,7 +7,7 @@ Usage:
 
 # GLOBALS
 # const version
-VERSION = "ESP-191111"
+VERSION = "ESP-200103"
 # echo print for debug
 debug = False
 # placeholder for readings
