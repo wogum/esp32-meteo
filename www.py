@@ -40,6 +40,8 @@ class WWW:
                 head += "Content-Type: text/css"
             elif '.js' in filename:
                 head += "Content-Type: application/javascript"
+            else:
+                head += "Content-Type: text/plain"
             if app.debug: print(app.tm(), "WWW file", filename)
             file = open(filename, "r")
             res = file.read()

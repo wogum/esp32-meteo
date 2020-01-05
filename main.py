@@ -30,7 +30,7 @@ def record(timer = None):
       app.vals[4] = 0
     if 'Si1145' in app.devs:
       try:
-        app.vals[2] = round(app.lux.UV * app.cfg.cal[2] + app.cfg.dt[2], 1)
+        app.vals[2] = round(10*app.lux.UV * app.cfg.cal[2] + app.cfg.dt[2], 1)
       except:
         pass
       if app.vals[2] < 0:
@@ -127,7 +127,7 @@ def startup():
     try:
       app.bme = bme280.BME280(app.i2c)
       app.devs[0] = "BME280"
-      app.units[0] = "T1[C]"
+      app.units[0] = "T[C]"
       app.units[1] = "P[hPa]"
       app.units[2] = "H[%]"
     except:
@@ -136,8 +136,8 @@ def startup():
     try:
       app.lux = si1145.SI1145(app.i2c)
       app.devs[4] = "Si1145"
-      app.units[4] = "I[lx]"
-      app.units[2] = "UV[]"
+      app.units[4] = "E[lx]"
+      app.units[2] = "UV[%]"
     except:
       app.lux = None
     if app.lux is None:
@@ -145,7 +145,7 @@ def startup():
         import max44009
         app.lux = max44009.MAX44009(app.i2c)
         app.devs[4] = "Max44009"
-        app.units[4] = "I[lx]"
+        app.units[4] = "E[lx]"
       except:
         app.lux = None
     #ds18b20
@@ -171,7 +171,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200104"
+app.VERSION = "D32-200105"
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)

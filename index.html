@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>Meteo Station</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" />
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+  <script src="esp.js"></script>
+</head>
+<body ng-app="esp32App" ng-controller="esp32Ctrl">
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h3>{{r.cfg.hostname}} Meteo Station</h3>
+        Node: {{r.node}}  
+        Software version: {{r.ver}} 
+        Current time: {{r.dt}}<br />
+        Devices: <span ng-repeat="v in r.dev track by $index">{{v}} </span>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-striped table-hover text-center">
+          <thead>
+            <tr><th>Parameter</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Time</td><td>{{r.dt}}</td></tr>
+            <tr ng-repeat="v in r.val track by $index"><td>{{r.key[$index]}}</td><td>{{r.val[$index]}} {{r.unit[$index]}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+      </div>
+    </div>
+    <hr />
+      <div class="card-footer text-muted small">&copy;2019 WG</div>
+    </div>
+  </div>
+</body>
+</html>
