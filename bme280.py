@@ -26,9 +26,7 @@ class BME280:
     BME280_CONFIG       = 0xF5
 
     def __init__(self, i2c = None):
-
         from struct import unpack
-        
         if i2c is None:
             raise ValueError("I2C object is required.")
         self.i2c = i2c
@@ -44,10 +42,8 @@ class BME280:
         self.chipid = self.i2c.readfrom_mem(self.i2caddr, self.BME280_CHIPID, 1)[0]
         if self.chipid not in [self.BMP280_MAGIC, self.BME280_MAGIC]:
             raise ValueError("BME280/BMP280 Device not present")
-
         # set oversample setting 1..5
         self.osrs = 3
-
         # calibration data at 0x88
         self.T1, self.T2, self.T3, \
             self.P1, self.P2, self.P3, self.P4, self.P5, \
@@ -58,10 +54,8 @@ class BME280:
             self.H2, self.H3, E4, E5, E6, self.H6 = unpack("<hBbBbb", self.i2c.readfrom_mem(self.i2caddr, 0xE1, 7))
             self.H4 = (E4 << 4) | (E5 & 0x0F)
             self.H5 = (E6 << 4) | (E5 >> 4)
-
         # configuration 1000ms, no filter, i2c mode
         self.i2c.writeto_mem(self.i2caddr, self.BME280_CONFIG, b'\xA0')
-
         # last readings
         self.t_fine = 0
         self.T = None
@@ -69,10 +63,8 @@ class BME280:
         self.H = None
 
     def read(self, result = None):
-
         import time
         from struct import unpack
-        
         # read uncompensated raw data
         # control - forced mode with osrs oversampling
         if self.chipid == self.BME280_MAGIC:
@@ -88,13 +80,11 @@ class BME280:
         adc_press, pxlsb, adc_temp, txlsb, adc_hum = unpack(">HBHBH", self.i2c.readfrom_mem(self.i2caddr, 0xF7, 8))
         adc_press = (adc_press << 4) | (pxlsb >> 4)
         adc_temp = (adc_temp << 4) | (txlsb >> 4)
-
         # temperature calculation T deg C
         var1 = (((adc_temp >> 3) - (self.T1 << 1)) * self.T2) >> 11
         var2 = (((((adc_temp >> 4) - self.T1) * ((adc_temp >> 4) - self.T1)) >> 12) * self.T3) >> 14
         self.t_fine = var1 + var2
         self.T = ((self.t_fine * 5 + 128) >> 8) / 100
-
         # pressure calculation P hPa
         var1 = self.t_fine - 128000
         var2 = var1 * var1 * self.P6
@@ -110,7 +100,6 @@ class BME280:
             var1 = (self.P9 * (p >> 13) * (p >> 13)) >> 25
             var2 = (self.P8 * p) >> 19
             self.P = (((p + var1 + var2) >> 8) + (self.P7 << 4)) / 25600
-
         # humidity calculation H %
         if self.chipid == self.BME280_MAGIC:
             h = self.t_fine - 76800
@@ -122,7 +111,6 @@ class BME280:
             self.H = (h >> 12) / 1024
         else:
             self.H = 0
-
         # result
         if result is not None:
             result[0] = self.T 

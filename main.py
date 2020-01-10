@@ -17,6 +17,8 @@ def record(timer = None):
   if app.bme is not None: 
     try:
       v = app.bme.read()
+      if len(v) < 3:
+        v.append(0)
     except:
       v = (0, 0, 0)
     for i in range(3):
@@ -104,8 +106,6 @@ def startup():
     import time
     import app
     import mem
-    import bme280
-    import si1145
     import ds18b20
     import www
 
@@ -123,29 +123,59 @@ def startup():
     # rtc mem
     app.mem = mem.MEM()
     # i2c
-    Pin(26, Pin.OUT, value=0)
+    Pin(26, Pin.OUT, Pin.PULL_DOWN, value=0)
     Pin(25, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(27, Pin.IN, Pin.PULL_UP)
     Pin(14, Pin.IN, Pin.PULL_UP)
     app.i2c = I2C(scl=Pin(27), sda=Pin(14), freq=400000)
-    # bme280
-    try:
-      app.bme = bme280.BME280(app.i2c)
-      app.devs[0] = "BME280"
-      app.units[0] = "T[C]"
-      app.units[1] = "P[hPa]"
-      app.units[2] = "H[%]"
-    except:
-      app.bme = None
+    app.bme = None
+    app.lux = None
+    app.ds = None
+    s = app.i2c.scan()
+    # bme280/bmp280/bmp180/bmp085
+    if 0x76 in s or 0x77 in s:
+      if 0x76 in s:
+        addr = 0x76
+      else:
+        addr = 0x77
+      try:
+        id = app.i2c.readfrom_mem(addr, 0xD0, 1)[0]
+      except:
+        id = 0
+      if id == 0x55:
+        try:
+          import bmp180
+          app.bme = bmp180.BMP180(app.i2c)
+          app.devs[0] = "BMP180"
+          app.units[0] = "T[C]"
+          app.units[1] = "P[hPa]"
+        except:
+          app.bme = None
+      elif id == 0x58 or id == 0x60:  
+        try:
+          import bme280
+          app.bme = bme280.BME280(app.i2c)
+          app.devs[0] = "BMP280"
+          app.units[0] = "T[C]"
+          app.units[1] = "P[hPa]"
+          if id == 0x60:
+            app.devs[0] = "BME280"
+            app.units[2] = "H[%]"
+        except:
+          app.bme = None
+      else:
+        app.bme = None
     # si1145 / max44009
-    try:
-      app.lux = si1145.SI1145(app.i2c)
-      app.devs[4] = "Si1145"
-      app.units[4] = "E[lx]"
-      app.units[2] = "UV[%]"
-    except:
-      app.lux = None
-    if app.lux is None:
+    if 0x60 in s:
+      try:
+        import si1145
+        app.lux = si1145.SI1145(app.i2c)
+        app.devs[4] = "Si1145"
+        app.units[4] = "E[lx]"
+        app.units[2] = "UV[%]"
+      except:
+        app.lux = None
+    if app.lux is None and (0x4A in s or 0x4B in s):
       try:
         import max44009
         app.lux = max44009.MAX44009(app.i2c)
@@ -153,10 +183,10 @@ def startup():
         app.units[4] = "E[lx]"
       except:
         app.lux = None
-    #ds18b20
-    Pin(4, Pin.OUT, value=0)
+    Pin(4, Pin.OUT, Pin.PULL_DOWN, value=0)
     Pin(15, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(16, Pin.IN, Pin.PULL_UP)
+    #ds18b20
     try:
       app.ds = ds18b20.DS18B20(16)
       if app.devs[0] == "":
@@ -180,7 +210,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200105"
+app.VERSION = "D32-200110"
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
