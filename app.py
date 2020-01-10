@@ -7,7 +7,7 @@ Usage:
 
 # GLOBALS
 # const version
-VERSION = "ESP-200103"
+VERSION = "ESP-200105"
 # echo print for debug
 debug = False
 # placeholder for readings
@@ -126,9 +126,12 @@ def ntp(server = None):
     if wlan.isconnected():
         if server is not None:
             ntptime.host = server
-        ntptime.settime()
-        print(tm(), "NTP synchronized")
-        return True
+        try:
+            ntptime.settime()
+            print(tm(), "NTP synchronized")
+            return True
+        except:
+            pass
     return False
 
 # print file content
