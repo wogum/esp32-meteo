@@ -11,9 +11,6 @@ Usage:
     temp, press, humi = bme280.read()
 """
 
-import time
-from ustruct import unpack
-
 class BME280:
     
     # BME280 default i2c address.
@@ -30,6 +27,8 @@ class BME280:
 
     def __init__(self, i2c = None):
 
+        from struct import unpack
+        
         if i2c is None:
             raise ValueError("I2C object is required.")
         self.i2c = i2c
@@ -71,6 +70,9 @@ class BME280:
 
     def read(self, result = None):
 
+        import time
+        from struct import unpack
+        
         # read uncompensated raw data
         # control - forced mode with osrs oversampling
         if self.chipid == self.BME280_MAGIC:
@@ -129,43 +131,3 @@ class BME280:
             return result
         else:
             return (self.T, self.P, self.H)
-
-    @property
-    def i2caddress(self):
-        return self.i2caddr
-
-    @i2caddress.setter
-    def i2caddress(self, value):
-        if value in [0x76, 0x77]:
-            self.i2caddr = value
-        else:
-            raise("I2C address must be in range 0x76 .. 0x77")
-
-    @property
-    def oversample(self):
-        return self.osrs
-
-    @oversample.setter
-    def oversample(self, value):
-        if value in [1, 2, 3, 4, 5]:
-            self.osrs = value
-        else:
-            raise("Oversampling must be in range 1 .. 5")
-
-    @property
-    def temperature(self):
-        if self.T is None:
-            self.read()
-        return self.T
-
-    @property
-    def pressure(self):
-        if self.P is None:
-            self.read()
-        return self.P
-
-    @property
-    def humidity(self):
-        if self.H is None:
-            self.read()
-        return self.H
