@@ -1,6 +1,8 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
+import esp
 import network
 import webrepl
+esp.osdebug(None)
 # wifi connect
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
