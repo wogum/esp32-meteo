@@ -37,7 +37,12 @@ def record(timer = None):
         app.vals[2] = 0
   if app.ds is not None:
     try:
-      app.vals[3] = round(app.ds.read() * app.cfg.cal[3] + app.cfg.dt[3], 1)
+      v = app.ds.read()
+      if app.devs[0] == "" or app.devs[0] == "DS18B20":
+        app.devs[0] = "DS18B20"
+        app.vals[0] = round(v * app.cfg.cal[0] + app.cfg.dt[0], 1)
+      else:
+        app.vals[3] = round(v * app.cfg.cal[3] + app.cfg.dt[3], 1)
     except:
       pass
     if app.devs[0] == '' and app.vals[0] == 0 and app.vals[3] != 0:
@@ -54,7 +59,7 @@ def record(timer = None):
   if "http" in app.cfg.url:
     hist = (((time.time() + 60) // 60) % 60) <= 1
     if not app.www.httpsend(hist):
-      if hist:
+      if hist and app.mem is not None:
         v = app.mem.savemem()
         print(app.tm(), "Save to mem: ", v)
   gosleep()
@@ -118,7 +123,7 @@ def startup():
     # rtc mem
     app.mem = mem.MEM()
     # i2c
-    Pin(26, Pin.OUT, Pin.PULL_DOWN, value=0)
+    Pin(26, Pin.OUT, value=0)
     Pin(25, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(27, Pin.IN, Pin.PULL_UP)
     Pin(14, Pin.IN, Pin.PULL_UP)
@@ -149,13 +154,17 @@ def startup():
       except:
         app.lux = None
     #ds18b20
-    Pin(4, Pin.OUT, Pin.PULL_DOWN, value=0)
+    Pin(4, Pin.OUT, value=0)
     Pin(15, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(16, Pin.IN, Pin.PULL_UP)
     try:
       app.ds = ds18b20.DS18B20(16)
-      app.devs[3] = "DS18B20"
-      app.units[3] = "T2[C]"
+      if app.devs[0] == "":
+        app.devs[0] = "DS18B20"
+        app.units[0] = "T[C]"
+      else:
+        app.devs[3] = "DS18B20"
+        app.units[3] = "T2[C]"
     except:
       app.ds = None
     # www
