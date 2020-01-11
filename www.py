@@ -12,8 +12,12 @@ class WWW:
         self.extparse = None
         self.exthandle = None
         if start:
-            import _thread
-            _thread.start_new_thread(self.server, ())
+            try:
+                import _thread
+                _thread.start_new_thread(self.server, ())
+            except Exception as e:
+                import app
+                print(app.tm(), app.RED, "WWW thread creating error", app.END, repr(e))
 
     # handle client connection
     def handle(self, cli):
@@ -94,7 +98,7 @@ class WWW:
                     if app.debug: print(app.tm(), "WWW client connected", cliaddr)
                     self.handle(cli)
                 except Exception as e:
-                    print(app.tm(), "WWW ERROR", repr(e))
+                    print(app.tm(), app.RED, "WWW ERROR", app.END, repr(e))
                 finally:
                     cli.close()
         except Exception as e:
@@ -115,7 +119,7 @@ class WWW:
         msg['utc'] = "{}T{}".format(app.date(), app.time())
         msg['val'] = app.vals 
         msg['dev'] = app.devs
-        msg['units'] = app.units
+        msg['label'] = app.units
         msg['ver'] = app.VERSION
         msg['ip'] = network.WLAN(network.STA_IF).ifconfig()[0]
         msg['mac'] = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode()
@@ -124,7 +128,10 @@ class WWW:
             f = open('config', 'r')
             msg['cfg'] = json.loads(f.read())
             f.close()
-            msg['mem'] = ubinascii.b2a_base64(machine.RTC().memory()).rstrip().decode()
+            try:
+                msg['mem'] = ubinascii.b2a_base64(machine.RTC().memory()).rstrip().decode()
+            except:
+                pass
         return json.dumps(msg).replace(' ', '')
     
     # send reading and optionaly history and configuration to http server as json
@@ -141,7 +148,7 @@ class WWW:
                 data = self.message(history), 
                 headers = { "Content-type" : "application/json" })
             if r.status_code == 200:
-                print(app.tm(), app.GREEN, "HTTP sent", app.END, r.status_code, r.text)
+                if app.debug: print(app.tm(), "HTTP sent", r.status_code, r.text)
                 res = True
                 if "?" in r.text:
                     self.parseresp(r.text.split("?")[1])
