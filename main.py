@@ -65,7 +65,27 @@ def record(timer = None):
         v = app.mem.savemem()
         print(app.tm(), "Save to mem: ", v)
   gosleep()
-  
+  # if not going sleep then start BLE advertising
+  bleadvert(app.vals[0] if app.units[0].startswith('T') else 0, 
+    app.vals[1] if app.units[1].startswith('P') else 0, 
+    app.vals[2] if app.units[2].startswith('H') else 0)
+
+# start BLE advertising T, P and H in iNode PTH format
+def bleadvert(t,p,h):
+  import struct
+  import time
+  import ubluetooth
+  import app
+  if app.ble is None:
+    app.ble = ubluetooth.BLE()
+    app.ble.active(True)
+  epoch = int(time.time() + 946684800)
+  resp = b'\x0a\x09' + "ESP32 PTH" #+ b'\x02\x0A\x08'
+  adv = (b'\x02\x01\x06\x19\xFF\x10\x9D\x00\xF0\x00\x00' +
+    struct.pack('<HHHHH', int(16*p), int((t+46.85)/175.72*16384), int((h+6)/125*16384), epoch >> 16, epoch & 0xFFFF) +
+    b'\x00\x00\x00\x00\x00\x00\x00\x00')
+  app.ble.gap_advertise(1000000, adv, resp_data = resp)
+
 def gosleep(timer = None):
   from machine import Pin
   import machine
@@ -131,6 +151,7 @@ def startup():
     app.bme = None
     app.lux = None
     app.ds = None
+    app.ble = None
     s = app.i2c.scan()
     # bme280/bmp280/bmp180/bmp085
     if 0x76 in s or 0x77 in s:
