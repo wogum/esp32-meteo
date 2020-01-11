@@ -6,8 +6,6 @@
   <title>Meteo Station</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" />
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
   <script src="esp.js"></script>
 </head>
@@ -17,8 +15,7 @@
       <div class="card-header">
         <h3>{{r.cfg.hostname}} Meteo Station</h3>
         Node: {{r.node}}  
-        Software version: {{r.ver}} 
-        Current time: {{r.dt}}<br />
+        Version: {{r.ver}} 
         Devices: <span ng-repeat="v in r.dev track by $index">{{v}} </span>
       </div>
       <div class="card-body">
@@ -32,10 +29,6 @@
           </tbody>
         </table>
       </div>
-      <div class="card-footer">
-      </div>
-    </div>
-    <hr />
       <div class="card-footer text-muted small">&copy;2019 WG</div>
     </div>
   </div>

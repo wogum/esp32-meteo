@@ -11,7 +11,7 @@ app.controller("esp32Ctrl", function($scope, $http, $interval, $timeout) {
       $scope.r.key = [];
       $scope.r.unit = [];
       for(i=0; i<6; i++) {
-        u = $scope.r.units[i];
+        u = $scope.r.label[i];
         if (u.includes('[') && u.endsWith(']')) {
           $scope.r.key[i] = u.substring(0, u.indexOf('['));
           $scope.r.unit[i] = u.substring(u.indexOf('[')+1, u.length-1);
