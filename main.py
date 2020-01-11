@@ -13,7 +13,9 @@ def record(timer = None):
   import app
   print(app.tm(), "Readings")
   # record
+  # Vbat
   app.vals[5] = int(bat() * app.cfg.cal[5] + app.cfg.dt[5])
+  # TPH
   if app.bme is not None: 
     try:
       v = app.bme.read()
@@ -23,6 +25,7 @@ def record(timer = None):
       v = (0, 0, 0)
     for i in range(3):
       app.vals[i] = round(v[i] * app.cfg.cal[i] + app.cfg.dt[i], 1)
+  # E, UV
   if app.lux is not None:
     try:
       app.vals[4] = round(app.lux.read() * app.cfg.cal[4] + app.cfg.dt[4], 1)
@@ -37,6 +40,7 @@ def record(timer = None):
         pass
       if app.vals[2] < 0:
         app.vals[2] = 0
+  # T2
   if app.ds is not None:
     try:
       v = app.ds.read()
@@ -60,10 +64,15 @@ def record(timer = None):
   # http send
   if "http" in app.cfg.url:
     hist = (((time.time() + 60) // 60) % 60) <= 1
-    if not app.www.httpsend(hist):
-      if hist and app.mem is not None:
-        v = app.mem.savemem()
-        print(app.tm(), "Save to mem: ", v)
+    if app.www.httpsend(hist):
+      print(app.tm(), app.GREEN, "HTTP sent", app.END)
+    else:
+      if hist:
+        try:
+          v = app.mem.savemem()
+          print(app.tm(), "Saved to mem: ", v)
+        except:
+          pass
   gosleep()
   # if not going sleep then start BLE advertising
   bleadvert(app.vals[0] if app.units[0].startswith('T') else 0, 

@@ -13,7 +13,9 @@ def record(timer = None):
   import app
   print(app.tm(), "Readings")
   # record
+  # Vbat
   app.vals[5] = int(bat() * app.cfg.cal[5] + app.cfg.dt[5])
+  # TPH
   if app.bme is not None: 
     try:
       v = app.bme.read()
@@ -21,6 +23,7 @@ def record(timer = None):
       v = (0, 0, 0)
     for i in range(3):
       app.vals[i] = round(v[i] * app.cfg.cal[i] + app.cfg.dt[i], 1)
+  # T2
   if app.ds is not None:
     try:
       v = app.ds.read()
@@ -42,10 +45,15 @@ def record(timer = None):
   # http send
   if "http" in app.cfg.url:
     hist = (((time.time() + 60) // 60) % 60) <= 1
-    if not app.www.httpsend(hist):
-      if hist and app.mem is not None:
-        v = app.mem.savemem()
-        print(app.tm(), "Save to mem: ", v)
+    if app.www.httpsend(hist):
+      print(app.tm(), app.GREEN, "HTTP sent", app.END)
+    else:
+      if hist:
+        try:
+          v = app.mem.savemem()
+          print(app.tm(), "Saved to mem: ", v)
+        except:
+          pass
   gosleep()
   
 def gosleep(timer = None):
@@ -156,3 +164,5 @@ record()
 
 timer2 = Timer(2)
 timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
+
+#app.www.server()
