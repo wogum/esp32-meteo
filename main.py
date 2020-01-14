@@ -196,6 +196,7 @@ def startup():
       else:
         app.bme = None
     # si1145 / max44009
+    s = app.i2c.scan()
     if 0x60 in s:
       try:
         import si1145
