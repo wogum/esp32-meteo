@@ -74,10 +74,12 @@ def record(timer = None):
         except:
           pass
   gosleep()
+  """
   # if not going sleep then start BLE advertising
   bleadvert(app.vals[0] if app.units[0].startswith('T') else 0, 
     app.vals[1] if app.units[1].startswith('P') else 0, 
     app.vals[2] if app.units[2].startswith('H') else 0)
+  """
 
 # start BLE advertising T, P and H in iNode PTH format
 def bleadvert(t,p,h):
@@ -156,7 +158,7 @@ def startup():
     Pin(25, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(27, Pin.IN, Pin.PULL_UP)
     Pin(14, Pin.IN, Pin.PULL_UP)
-    app.i2c = I2C(scl=Pin(27), sda=Pin(14), freq=400000)
+    app.i2c = I2C(0, scl=Pin(27), sda=Pin(14), freq=400000)
     app.bme = None
     app.lux = None
     app.ds = None
@@ -241,7 +243,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200110"
+app.VERSION = "D32-200204"
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
