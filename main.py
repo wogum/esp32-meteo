@@ -73,7 +73,12 @@ def record(timer = None):
           print(app.tm(), "Saved to mem: ", v)
         except:
           pass
+  # go deep sleep
   gosleep()
+  next = (app.cfg.node & 0x07) + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
+  # if not going sleep set next run
+  timer2 = Timer(2)
+  timer2.init(period=1000*next, mode=Timer.ONE_SHOT, callback=record)
   """
   # if not going sleep then start BLE advertising
   bleadvert(app.vals[0] if app.units[0].startswith('T') else 0, 
@@ -253,6 +258,6 @@ startup()
 record()
 
 timer2 = Timer(2)
-timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
+#timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
 
 gc.enable()
