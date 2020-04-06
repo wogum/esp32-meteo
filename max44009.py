@@ -40,13 +40,11 @@ class MAX44009:
         self.lux = None
 
     def read(self):
-        # MAX44009 does not have autoincremet registers address so one have to read byte by byte without stop between
-        msb = bytearray(1)
-        lsb = bytearray(1)
+        # MAX44009 does not have autoincremet registers address so one have to read byte by byte
         self.i2c.writeto(self.MAX_I2CADDR, bytearray([self.MAX_LUX_HIGH]), False)
-        self.i2c.readfrom_into(self.MAX_I2CADDR, msb, False)
+        msb = self.i2c.readfrom(self.MAX_I2CADDR, 1, True)
         self.i2c.writeto(self.MAX_I2CADDR, bytearray([self.MAX_LUX_LOW]), False)
-        self.i2c.readfrom_into(self.MAX_I2CADDR, lsb, True)
+        lsb = self.i2c.readfrom(self.MAX_I2CADDR, 1, True)
         msb = msb[0]
         lsb = lsb[0]
         exponent = msb >> 4
