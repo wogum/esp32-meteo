@@ -112,13 +112,15 @@ def gosleep(timer = None):
     print(app.tm(), app.LIGHTRED, "FORCE sleep", app.END)
   if app.cfg.slp > 0:
     # power off
+    network.WLAN(network.STA_IF).disconnect()
     network.WLAN(network.STA_IF).active(False)
     for pin in (25,15,26,4,16,27,14):
       Pin(pin, Pin.IN, Pin.PULL_HOLD)
     # time to sleep
-    next = (app.cfg.node & 0x07) + 15 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
+    next = (app.cfg.node & 0x07) + 30 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
     print(app.tm(), app.RED, "Deep sleep ", app.END, next)
-    machine.deepsleep(next * 1000)
+    next *= 1000
+    machine.deepsleep(next)
 
 def bat():
   import app
@@ -248,7 +250,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200204"
+app.VERSION = "D32-200413"
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
