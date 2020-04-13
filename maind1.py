@@ -68,7 +68,7 @@ def gosleep(timer = None):
     # power off
     network.WLAN(network.STA_IF).active(False)
     # time to sleep
-    next = (app.cfg.node & 0x07) + 15 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
+    next = (app.cfg.node & 0x07) + 30 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
     print(app.tm(), app.RED, "Deep sleep ", app.END, next)
     machine.deepsleep(next * 1000)
 
