@@ -1,6 +1,7 @@
 """
 ESP32 Micropython www micro server.
 Author WG 2019 The MIT License (MIT)
+Version 20200828
 Usage: 
     import www
     srv = www.WWW(True)
@@ -135,24 +136,28 @@ class WWW:
         return json.dumps(msg).replace(' ', '')
     
     # send reading and optionaly history and configuration to http server as json
-    def httpsend(self, history = False):
+    def httpsend(self, history = False, msg = None, url = None):
         """HTTP send recorded data to URL"""
         import urequests
         import app
         import gc
+        if msg is None:
+            msg = self.message(history)
+        if url is None:
+            url = app.cfg.url
+        if not "http" in url:
+            return False
         res = False
         try:
-            print(app.tm(), "HTTP sending")
             gc.collect()
-            r = urequests.post(app.cfg.url, 
-                data = self.message(history), 
-                headers = { "Content-type" : "application/json" })
+            print(app.tm(), "HTTP sending")
+            r = urequests.post(url, data = msg, headers = { "Content-type" : "application/json" })
             if r.status_code == 200:
                 if app.debug: print(app.tm(), "HTTP sent", r.status_code, r.text)
                 res = True
                 if "?" in r.text:
                     self.parseresp(r.text.split("?")[1])
-            else:
+            if not res:
                 print(app.tm(), app.RED, "HTTP ERROR in send", r.status_code, app.END, r.reason)
         except Exception as e:
                 print(app.tm(), app.RED, "HTTP send exception: ", app.END, repr(e))
