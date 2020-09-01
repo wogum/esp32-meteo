@@ -62,17 +62,16 @@ def record(timer = None):
       print(app.tm(), "Sleep correction", next)
       gosleep()
   # http send
-  if "http" in app.cfg.url:
-    hist = (((time.time() + 60) // 60) % 60) <= 1
-    if app.www.httpsend(hist):
-      print(app.tm(), app.GREEN, "HTTP sent", app.END)
-    else:
-      if hist:
-        try:
-          v = app.mem.savemem()
-          print(app.tm(), "Saved to mem: ", v)
-        except:
-          pass
+  hist = (((time.time() + 60) // 60) % 60) <= 1
+  res = app.www.httpsend(hist)
+  if res:
+    print(app.tm(), app.GREEN, "HTTP sent", app.END)
+  if hist or not res:
+    try:
+      v = app.mem.savemem()
+      print(app.tm(), "Saved to mem: ", v)
+    except:
+      pass
   # go deep sleep
   gosleep()
   next = (app.cfg.node & 0x07) + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
@@ -250,7 +249,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200413"
+app.VERSION = "D32-200901"
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
