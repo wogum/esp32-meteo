@@ -73,8 +73,9 @@ class MEM:
         import time
         from struct import unpack
         mem = machine.RTC().memory()
-        while len(mem) >= 16:
-            v = unpack('>LHHHHHH', mem[0:16])
+        a = 0
+        while a < len(mem):
+            v = unpack('>LHHHHHH', mem[a:a+16])
             t = [v[1], v[2], v[3], v[4], v[5], v[6]]
             for i in range(6):
                 t[i] = self.b2f(t[i])
@@ -82,4 +83,4 @@ class MEM:
             s = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*tm) \
                 + " [{:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}]".format(*t)
             print(s)
-            mem = mem[16:]
+            a += 16
