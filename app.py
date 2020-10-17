@@ -7,11 +7,10 @@ Usage:
 
 # GLOBALS
 # const version
-VERSION = "ESP-200105"
+VERSION = "ESP-201017"
 # echo print for debug
 debug = False
 # placeholder for readings
-#vals = [ 0->v, i, p, c, e, 5->bat, ts, d ]
 vals = [0,0,0,0,0,0] 
 devs = ['','','','','','Bat']
 units = ['','','','','','Vbat[mV]']
@@ -19,11 +18,8 @@ units = ['','','','','','Vbat[mV]']
 cfg = None
 www = None
 # common interfaces
-adc = None
 i2c = None
-#uart = None
-#ina = None
-#oled = None
+pwm = None
 
 # const
 END             = "\033[0m"
@@ -46,7 +42,6 @@ LIGHTMAGENTA    = "\033[95m"
 LIGHTCYAN       = "\033[96m"
 WHITE           = "\033[97m"
 
-
 # time as string
 def time(secs = None):
     import time
@@ -59,17 +54,20 @@ def date(secs = None):
     tm = time.localtime(secs)
     return "{:04d}-{:02d}-{:02d}".format(tm[0], tm[1], tm[2])
 
-# time as string with 0.1 seconds
+# localtime as string with milliseconds
 def tm():
     import time
     global cfg
-    if cfg is not None:
-        secs = time.time() + 3600 * cfg.tz
-    else:
-        secs = None
-    tm = time.localtime(secs)
-    ms = (time.ticks_ms() % 10000) 
-    return "{}{:02d}:{:02d}:{:02d}({:04d}){}".format(BLUE, tm[3], tm[4], tm[5], ms, END)
+    tz = cfg.tz if cfg is not None else 0
+    try:
+        ms = int(time.time_ns() // 1000000 % 86400000)
+    except:
+        ms = int(time.time() * 1000)
+    h = (ms // 3600000 + tz) % 24
+    m = ms // 60000 % 60
+    s = ms // 1000 % 60
+    ss = ms % 1000
+    return "{}{:02d}:{:02d}:{:02d}.{:03d}{}".format(BLUE, h, m, s, ss, END)
 
 # internal battery voltage for Lolin D32
 def bat():
@@ -114,24 +112,27 @@ def rst(sek = 1):
     import machine
     machine.deepsleep(sek * 1000)
 
+# sync time
 def ntp(server = None):
     import network
     import time
     import ntptime
     wlan = network.WLAN(network.STA_IF)
     timeout = 5000
-    while not wlan.isconnected() and timeout > 0:
+    # while not connected
+    while wlan.ifconfig()[0] == '0.0.0.0' and timeout > 0:
         time.sleep(0.011)
         timeout -= 11
-    if wlan.isconnected():
+    # if connected
+    if wlan.ifconfig()[0] != '0.0.0.0':
         if server is not None:
             ntptime.host = server
         try:
             ntptime.settime()
             print(tm(), "NTP synchronized")
-            return True
         except:
-            pass
+            return False
+        return True
     return False
 
 # print file content
