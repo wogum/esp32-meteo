@@ -1,3 +1,11 @@
+"""
+ESP32 Micropython RTC memory.
+Author WG 2019 The MIT License (MIT)
+Version 20200902
+Usage: 
+    import mem
+    obj = mem.MEM()
+"""
 
 class MEM:
 
@@ -22,7 +30,7 @@ class MEM:
         y = (s << 15) | (e << 10) | m 
         return y
 
-    # float16 (s+e+m)(1+6+9bits) -> float32 (1+8+23bits)
+    # float16 (s+e+m)(1+5+10bits) -> float32 (1+8+23bits)
     def b2f(self, x):
         from struct import pack, unpack
         x = int(x) & 0xFFFF
@@ -34,6 +42,9 @@ class MEM:
         m = x & 0x03FF
         l = (s << 31) | (e << 23) | (m << 13) | 0x07FF
         y = unpack('>f', pack('>L', l))[0]
+        # round to 4 digits
+        d = round(41.43-e/3.322) 
+        y = round(y, d)
         return y
 
     # converts values to 16 bytes string
@@ -84,3 +95,8 @@ class MEM:
                 + " [{:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}, {:.1f}]".format(*t)
             print(s)
             a += 16
+
+    # clean all RTC memmory
+    def cleanmem(self):
+        import machine
+        machine.RTC().memory(b'')
