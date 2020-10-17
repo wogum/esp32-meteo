@@ -14,7 +14,7 @@ def record(timer = None):
   print(app.tm(), "Readings")
   # record
   # Vbat
-  app.vals[5] = int(bat() * app.cfg.cal[5] + app.cfg.dt[5])
+  app.vals[5] = int(app.bat() * app.cfg.cal[5] + app.cfg.dt[5])
   # TPH
   if app.bme is not None: 
     try:
@@ -66,12 +66,13 @@ def record(timer = None):
   res = app.www.httpsend(hist)
   if res:
     print(app.tm(), app.GREEN, "HTTP sent", app.END)
-  if hist or not res:
-    try:
-      v = app.mem.savemem()
-      print(app.tm(), "Saved to mem: ", v)
-    except:
-      pass
+  if not res or hist:
+    if app.mem is not None:
+      try:
+        v = app.mem.savemem()
+        print(app.tm(), "Saved to mem: ", v)
+      except:
+        pass
   # go deep sleep
   gosleep()
   next = (app.cfg.node & 0x07) + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
@@ -86,6 +87,7 @@ def record(timer = None):
   """
 
 # start BLE advertising T, P and H in iNode PTH format
+"""
 def bleadvert(t,p,h):
   import struct
   import time
@@ -100,12 +102,14 @@ def bleadvert(t,p,h):
     struct.pack('<HHHHH', int(16*p), int((t+46.85)/175.72*16384), int((h+6)/125*16384), epoch >> 16, epoch & 0xFFFF) +
     b'\x00\x00\x00\x00\x00\x00\x00\x00')
   app.ble.gap_advertise(1000000, adv, resp_data = resp)
+"""
 
 def gosleep(timer = None):
   from machine import Pin
   import machine
   import time
   import network
+  import os
   import app
   if timer is not None:
     print(app.tm(), app.LIGHTRED, "FORCE sleep", app.END)
@@ -113,36 +117,23 @@ def gosleep(timer = None):
     # power off
     network.WLAN(network.STA_IF).disconnect()
     network.WLAN(network.STA_IF).active(False)
-    for pin in (25,15,26,4,16,27,14):
-      Pin(pin, Pin.IN, Pin.PULL_HOLD)
+    if os.uname()[0] == "esp32":
+      for pin in (25,26,27,14,12,13,15):
+        Pin(pin, Pin.IN, Pin.PULL_HOLD)
+    else:
+      for pin in (14,4,5,12,13,15):
+        Pin(pin, Pin.IN)
     # time to sleep
     next = (app.cfg.node & 0x07) + 30 + app.cfg.rec * 60 - time.time() % (app.cfg.rec * 60)
     print(app.tm(), app.RED, "Deep sleep ", app.END, next)
     next *= 1000
     machine.deepsleep(next)
 
-def bat():
-  import app
-  if app.adc is None:
-    return 0
-  mx = app.adc.read()
-  mn = mx
-  s = mx
-  for _ in range(11):
-    v = app.adc.read()
-    s += v
-    if v > mx:
-      mx = v
-    if v < mn:
-      mn = v
-  s = s - mx - mn
-  return int(round(s * 0.176))
-
 def startup():
     from machine import Pin, ADC, I2C
     import time
+    import os
     import app
-    import mem
     import ds18b20
     import www
 
@@ -152,23 +143,33 @@ def startup():
 
     # led
     if app.cfg.led != 0:
-        app.led(app.cfg.led)
-    # bat ESP32 Lolin D32 like Vbat 100k/100k
-    app.adc = ADC(Pin(35))
-    app.adc.atten(ADC.ATTN_11DB)
-    app.adc.width(ADC.WIDTH_12BIT)
-    # rtc mem
-    app.mem = mem.MEM()
-    # i2c
-    Pin(26, Pin.OUT, Pin.PULL_DOWN, value=0)
-    Pin(25, Pin.OUT, Pin.PULL_UP, value=1)
-    Pin(27, Pin.IN, Pin.PULL_UP)
-    Pin(14, Pin.IN, Pin.PULL_UP)
-    app.i2c = I2C(0, scl=Pin(27), sda=Pin(14), freq=400000)
+        app.pwm = app.led(app.cfg.led)
     app.bme = None
     app.lux = None
+    app.mem = None
     app.ds = None
-    app.ble = None
+    # i2c
+    if os.uname()[0] == 'esp8266':
+      # i2c pins
+      Pin(14, Pin.OUT, Pin.PULL_UP, value=1)
+      Pin(4, Pin.IN, Pin.PULL_UP)
+      Pin(5, Pin.IN, Pin.PULL_UP)
+      app.i2c = I2C(scl=Pin(5), sda=Pin(4), freq=400000)
+    else: 
+      import mem
+      app.mem = mem.MEM()
+      # i2c pins
+      Pin(26, Pin.OUT, Pin.PULL_DOWN, value=0)
+      Pin(25, Pin.OUT, Pin.PULL_UP, value=1)
+      Pin(27, Pin.IN, Pin.PULL_UP)
+      Pin(14, Pin.IN, Pin.PULL_UP)
+      app.i2c = I2C(0, scl=Pin(27), sda=Pin(14), freq=400000)
+      Pin(15, Pin.OUT, Pin.PULL_DOWN, value=0)
+    # ds18b20 pins
+    Pin(15, Pin.OUT, value=0)
+    Pin(13, Pin.OUT, Pin.PULL_UP, value=1)
+    Pin(12, Pin.IN, Pin.PULL_UP)
+    #I2C devices
     s = app.i2c.scan()
     # bme280/bmp280/bmp180/bmp085
     if 0x76 in s or 0x77 in s:
@@ -222,12 +223,9 @@ def startup():
         app.units[4] = "E[lx]"
       except:
         app.lux = None
-    Pin(4, Pin.OUT, Pin.PULL_DOWN, value=0)
-    Pin(15, Pin.OUT, Pin.PULL_UP, value=1)
-    Pin(16, Pin.IN, Pin.PULL_UP)
     #ds18b20
     try:
-      app.ds = ds18b20.DS18B20(16)
+      app.ds = ds18b20.DS18B20(12)
       if app.devs[0] == "":
         app.devs[0] = "DS18B20"
         app.units[0] = "T[C]"
@@ -237,9 +235,9 @@ def startup():
     except:
       app.ds = None
     # www
-    app.www = www.WWW(True)
+    app.www = www.WWW(os.uname()[0] == 'esp32')
     #Vbat
-    print(app.tm(), app.VERSION, "Node", app.cfg.node, app.cfg.hostname, "Vbat", bat())
+    print(app.tm(), app.VERSION, "Node", app.cfg.node, app.cfg.hostname, "Vbat", app.bat())
     print(app.tm(), app.devs)
     print(app.tm(), app.units)
 
@@ -249,16 +247,18 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "D32-200901"
+app.VERSION = "METEO-201017"
+gc.enable()
 
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
 
 startup()
+del startup
 
 record()
 
 timer2 = Timer(2)
 #timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
 
-gc.enable()
+#app.www.server()
