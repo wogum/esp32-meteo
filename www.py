@@ -1,7 +1,7 @@
 """
 ESP32 Micropython www micro server.
 Author WG 2019 The MIT License (MIT)
-Version 20200828
+Version 20201017
 Usage: 
     import www
     srv = www.WWW(True)
@@ -122,8 +122,8 @@ class WWW:
         msg['dev'] = app.devs
         msg['label'] = app.units
         msg['ver'] = app.VERSION
-        msg['ip'] = network.WLAN(network.STA_IF).ifconfig()[0]
         msg['mac'] = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode()
+        msg['ip'] = network.WLAN(network.STA_IF).ifconfig()[0]
         # every hour add config and history
         if history:
             f = open('config', 'r')
@@ -141,12 +141,12 @@ class WWW:
         import urequests
         import app
         import gc
-        if msg is None:
-            msg = self.message(history)
         if url is None:
             url = app.cfg.url
         if not "http" in url:
             return False
+        if msg is None:
+            msg = self.message(history)
         res = False
         try:
             gc.collect()
