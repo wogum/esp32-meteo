@@ -41,18 +41,18 @@ def record(timer = None):
       if app.vals[2] < 0:
         app.vals[2] = 0
   # T2
-  if app.ds is not None:
+  if app.ds and app.ds.scan():
     try:
-      v = app.ds.read()
-      if app.devs[0] == "" or app.devs[0] == "DS18B20":
-        app.devs[0] = "DS18B20"
-        app.vals[0] = round(v * app.cfg.cal[0] + app.cfg.dt[0], 1)
-      else:
-        app.vals[3] = round(v * app.cfg.cal[3] + app.cfg.dt[3], 1)
+      while app.dsready > time.ticks_ms():
+        time.sleep(0.01)
+      v = app.ds.read_temp(app.ds.scan()[0])
+      if v != 85:
+        if app.devs[0] == "DS18B20":
+          app.vals[0] = round(v * app.cfg.cal[0] + app.cfg.dt[0], 1)
+        else:
+          app.vals[3] = round(v * app.cfg.cal[3] + app.cfg.dt[3], 1)
     except:
       pass
-    if app.devs[0] == '' and app.vals[0] == 0 and app.vals[3] != 0:
-      app.vals[0] = app.vals[3]
   print(app.tm(), "Values: ", app.vals)
   # sync time
   if app.ntp(app.cfg.ntp):
@@ -79,6 +79,7 @@ def record(timer = None):
   # if not going sleep set next run
   timer2 = Timer(2)
   timer2.init(period=1000*next, mode=Timer.ONE_SHOT, callback=record)
+  print(app.tm(), "Wait: ", next)
   """
   # if not going sleep then start BLE advertising
   bleadvert(app.vals[0] if app.units[0].startswith('T') else 0, 
@@ -104,6 +105,7 @@ def bleadvert(t,p,h):
   app.ble.gap_advertise(1000000, adv, resp_data = resp)
 """
 
+# go deep sleep if cfg.slp==1
 def gosleep(timer = None):
   from machine import Pin
   import machine
@@ -111,8 +113,6 @@ def gosleep(timer = None):
   import network
   import os
   import app
-  if timer is not None:
-    print(app.tm(), app.LIGHTRED, "FORCE sleep", app.END)
   if app.cfg.slp > 0:
     # power off
     network.WLAN(network.STA_IF).disconnect()
@@ -129,12 +129,20 @@ def gosleep(timer = None):
     next *= 1000
     machine.deepsleep(next)
 
+# start DS18B20 temperature conversion
+def dsconvert(timer = None):
+  import app
+  if app.ds and app.ds.scan():
+    app.ds.convert_temp()
+
+# init all 
 def startup():
     from machine import Pin, ADC, I2C
     import time
     import os
+    import onewire
+    import ds18x20
     import app
-    import ds18b20
     import www
 
     # devices and values
@@ -169,6 +177,15 @@ def startup():
     Pin(15, Pin.OUT, value=0)
     Pin(13, Pin.OUT, Pin.PULL_UP, value=1)
     Pin(12, Pin.IN, Pin.PULL_UP)
+    try:
+      app.ds = ds18x20.DS18X20(onewire.OneWire(Pin(12)))
+      if app.ds.scan():
+        app.ds.convert_temp()
+        app.dsready = time.ticks_ms() + 750
+        app.devs[3] = "DS18B20"
+        app.units[3] = "T2[C]"
+    except:
+      app.ds = None
     #I2C devices
     s = app.i2c.scan()
     # bme280/bmp280/bmp180/bmp085
@@ -224,16 +241,11 @@ def startup():
       except:
         app.lux = None
     #ds18b20
-    try:
-      app.ds = ds18b20.DS18B20(12)
-      if app.devs[0] == "":
-        app.devs[0] = "DS18B20"
-        app.units[0] = "T[C]"
-      else:
-        app.devs[3] = "DS18B20"
-        app.units[3] = "T2[C]"
-    except:
-      app.ds = None
+    if app.devs[0] == "" and app.devs[3] == "DS18B20":
+      app.devs[0] = "DS18B20"
+      app.units[0] = "T[C]"
+      app.devs[3] = ""
+      app.units[3] = ""
     # www
     app.www = www.WWW(os.uname()[0] == 'esp32')
     #Vbat
@@ -247,18 +259,21 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "METEO-201017"
+app.VERSION = "METEO-201018"
 gc.enable()
 
+# timer1=>gosleep, timer2=>record, timer3=>DS18B20.convert_start
 timer1 = Timer(1)
 timer1.init(period=12000, mode=Timer.ONE_SHOT, callback=gosleep)
+timer2 = Timer(2)
+timer3 = Timer(3)
 
 startup()
 del startup
 
 record()
 
-timer2 = Timer(2)
-#timer2.init(period=60*1000*app.cfg.rec, mode=Timer.PERIODIC, callback=record)
+if app.ds and app.ds.scan():
+  timer3.init(period=60*1000, mode=Timer.PERIODIC, callback=dsconvert)
 
 #app.www.server()
