@@ -1,7 +1,7 @@
 """
 ESP32 Micropython www micro server.
 Author WG 2019 The MIT License (MIT)
-Version 20201017
+Version 20201119
 Usage: 
     import www
     srv = www.WWW(True)
@@ -129,10 +129,14 @@ class WWW:
             f = open('config', 'r')
             msg['cfg'] = json.loads(f.read())
             f.close()
-            try:
-                msg['mem'] = ubinascii.b2a_base64(machine.RTC().memory()).rstrip().decode()
-            except:
-                pass
+            import os
+            osv = os.uname()
+            msg['os'] = "{}_{}".format(osv[0], osv[3]).replace(" ", "_")
+            if osv[0] == 'esp32':
+                try:
+                    msg['mem'] = ubinascii.b2a_base64(machine.RTC().memory()).rstrip().decode()
+                except:
+                    pass
         return json.dumps(msg).replace(' ', '')
     
     # send reading and optionaly history and configuration to http server as json
