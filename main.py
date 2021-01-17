@@ -259,7 +259,7 @@ def startup():
 # MAIN
 ###############################################################################
 
-app.VERSION = "METEO-201018"
+app.VERSION = "METEO-210117"
 gc.enable()
 
 # timer1=>gosleep, timer2=>record, timer3=>DS18B20.convert_start
@@ -270,6 +270,9 @@ timer3 = Timer(3)
 
 startup()
 del startup
+
+gc.collect()
+gc.threshold(gc.mem_free()//4 + gc.mem_alloc())
 
 record()
 
