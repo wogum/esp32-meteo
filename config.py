@@ -58,7 +58,6 @@ class CONFIG:
     def read(self):
         """reads json string of config from file"""
         import json
-        import os
         try:
             file = open(self.filename, 'r')
             js = file.readline().rstrip('\n').rstrip('\r').replace(' ', '') 
@@ -81,49 +80,42 @@ class CONFIG:
 
     # Parse dictionary of parameters from HTTP response
     def parse(self, par):
-        import json
-        new = False
         try:
             # config oprerations
             if "slp" in par:
                 self.slp = abs(int(par['slp']))
-                new = True
             if "rec" in par:
                 self.rec = abs(int(par['rec']))
-                new = True
             if "cal" in par:
+                import json
                 self.cal = json.loads(str(par['cal']).replace(
                     '%5B', '[').replace('%5D', ']').replace('%2C', ','))
-                new = True
             if "dt" in par:
-                self.cal = json.loads(str(par['dt']).replace(
+                import json
+                self.dt = json.loads(str(par['dt']).replace(
                     '%5B', '[').replace('%5D', ']').replace('%2C', ','))
-                new = True
             if "url" in par:
                 self.url = str(par['url']).replace(
                     '%3A', ':').replace('%2F', '/')
-                new = True
             if "tz" in par:
                 self.tz = int(par['tz'])
-                new = True
             if "ntp" in par:
                 self.ntp = str(par['ntp'])
-                new = True
                 import ntptime
                 ntptime.host = self.ntp
-                ntptime.settime()
+                try:
+                    ntptime.settime()
+                except:
+                    pass
             if "ssid" in par and "pwd" in par:
                 self.ssid = str(par['ssid'])
                 self.pwd = str(par['pwd'])
-                new = True
             if "led" in par:
                 self.led = int(par["led"])
-                new = True
             if "hostname" in par:
                 self.hostname = str(par['hostname']).replace(' ', '')
             # save and send changed config
-            if new:
-                self.write()
-            return new
+            self.write()
+            return True
         except:
             return False
